@@ -72,7 +72,10 @@ The goal of breaking it into phases is to get the simpler syntax and simpler use
 
 A component can specify an element in its shadow tree to act as its "reference target". When the host component is the target of a IDREF like a label's `for` attribute, the referenceTarget becomes the effective target of the label.
 
-The shadow root specifies the ID of the target element inside the shadow DOM. This is done either in JavaScript with the `referenceTarget` attribute on the `ShadowRoot` object, or in HTML markup using the `shadowrootreferencetarget` attribute on the `<template>` element.
+The shadow root specifies the ID of the target element inside the shadow DOM. This is done using one of the following methods:
+* The `referenceTarget` entry in the `ShadowRootInit` argument to `attachShadow()`.
+* The `referenceTarget` attribute on the `ShadowRoot` object.
+* In HTML markup using the `shadowrootreferencetarget` attribute on the `<template>` element.
 
 JavaScript example:
 
@@ -83,9 +86,11 @@ JavaScript example:
     class FancyInput extends HTMLElement {
       constructor() {
         super();
-        this.shadowRoot_ = this.attachShadow({ mode: "closed" });
+        this.shadowRoot_ = this.attachShadow({ 
+          mode: "closed",
+          referenceTarget: "real-input",
+        });
         this.shadowRoot_.innerHTML = `<input id="real-input">`;
-        this.shadowRoot_.referenceTarget = "real-input";
       }
     }
   );
@@ -261,11 +266,13 @@ In the following example, the label of the `<input id="real-input">` is "Fancy i
     class FancyInput extends HTMLElement {
       constructor() {
         super();
-        this.shadowRoot_ = this.attachShadow({ mode: "closed" });
+        this.shadowRoot_ = this.attachShadow({ 
+          mode: "closed",
+          referenceTarget: "real-input",
+          // Alternatively, set the referenceTargetMap with the `for` attribute:
+          // referenceTargetMap: { htmlFor: "real-input" },
+        });
         this.shadowRoot_.innerHTML = `<input id="real-input" />`;
-        this.shadowRoot_.referenceTarget = "real-input";
-        // Alternatively, set the referenceTargetMap with the `for` attribute:
-        // this.shadowRoot_.referenceTargetMap.htmlFor = "real-input";
       }
     }
   );
@@ -331,13 +338,15 @@ Since custom elements inherit from `HTMLElement` and _not_ `HTMLInputElement`, t
       static formAssociated = true;
       constructor() {
         super();
-        this.attachShadow({ mode: "open" });
+        this.attachShadow({
+          mode: "open",
+          referenceTarget: "real-input",
+        });
         this.internals = this.attachInternals();
         this.shadowRoot.innerHTML = `
         <label id="inner" for="real-input">Inner</label>
         <input id="real-input" />
       `;
-        this.shadowRoot.referenceTarget = "real-input";
       }
     }
   );
@@ -521,9 +530,11 @@ customElements.define(
 
     constructor() {
       super();
-      this.shadowRoot_ = this.attachShadow({ mode: "closed" });
+      this.shadowRoot_ = this.attachShadow({
+        mode: "closed",
+        referenceTarget: "real-input",
+      });
       this.shadowRoot_.innerHTML = `<input id="real-input">`;
-      this.shadowRoot_.referenceTarget = "real-input"; // (1)
       this.input_ = this.shadowRoot_.getElementById("real-input");
     }
 
@@ -560,14 +571,16 @@ customElements.define("fancy-listbox",
 
     constructor() {
       super();
-      this.shadowRoot_ = this.attachShadow({ mode: "closed" });
+      this.shadowRoot_ = this.attachShadow({
+        mode: "closed",
+        referenceTarget: "real-listbox", // (1)
+      });
       this.shadowRoot_.innerHTML = `
         <div id="real-listbox" role="listbox">
           <div id="option-1" role="option">Option 1</div>
           <div id="option-2" role="option">Option 2</div>
         </div>
       `;
-      this.shadowRoot_.referenceTarget = "real-listbox"; // (1)
     }
 
     attributeChangedCallback(attr, _oldValue, value) {

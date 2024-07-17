@@ -90,7 +90,10 @@ JavaScript example:
           mode: "closed",
           referenceTarget: "real-input",
         });
-        this.shadowRoot_.innerHTML = `<input id="real-input">`;
+        this.shadowRoot_.innerHTML = `<input id="real-input">`;        
+        // Optionally, set referenceTarget on the ShadowRoot object.
+        // Not needed in this case since it was set in attachShadow() instead.
+        // this.shadowRoot_.referenceTarget = "real-input";
       }
     }
   );

@@ -12,7 +12,7 @@ This proposal is based on [@Westbrook](https://github.com/Westbrook)'s [Cross-ro
 
 ### Cross-Root ARIA
 
-For an in-depth description the cross-root ARIA problem, see [@alice](https://github.com/alice)'s article [How Shadow DOM and accessibility are in conflict](https://alice.pages.igalia.com/blog/how-shadow-dom-and-accessibility-are-in-conflict/). The article describes the two main problems that need to be solved: 
+For an in-depth description the cross-root ARIA problem, see [@alice](https://github.com/alice)'s article [How Shadow DOM and accessibility are in conflict](https://alice.pages.igalia.com/blog/how-shadow-dom-and-accessibility-are-in-conflict/). The article describes the two main problems that need to be solved:
 
 #### 1. Referring from Shadow DOM outwards
 
@@ -295,14 +295,27 @@ Reference target does not change the behavior of the host element when it is nes
 
 Some JavaScript attributes reflect HTML attributes as Element objects rather than ID strings. These include:
 
-- ARIAMixin attributes like `ariaActiveDescendantElement`
+- `ARIAMixin.ariaActiveDescendantElement`
+- `ARIAMixin.ariaControlsElements`
+- `ARIAMixin.ariaDescribedByElements`
+- `ARIAMixin.ariaDetailsElements`
+- `ARIAMixin.ariaErrorMessageElements`
+- `ARIAMixin.ariaFlowToElements`
+- `ARIAMixin.ariaLabelledByElements`
+- `ARIAMixin.ariaOwnsElements`
+- `HTMLButtonElement.interestTargetElement`
 - `HTMLButtonElement.popoverTargetElement`
+- `HTMLElement.anchorElement`
 - `HTMLInputElement.form`
 - `HTMLInputElement.labels`
+- `HTMLInputElement.list`
 - `HTMLLabelElement.control`
-- _(This list is not exhaustive)_
 
-These will _always_ refer to the **host** element that they're targeting, and _never_ the referenceTarget element directly. This behavior maintains the design that an [IDL attribute with type Element](https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:element) can only refer to an element that is a descendant of a [shadow-including ancestor](https://dom.spec.whatwg.org/#concept-shadow-including-ancestor) of the element hosting the attribute.
+These will _never_ directly return the referenceTarget element that's inside the shadow tree. This is because an [IDL attribute with type Element](https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:element) can only refer to an element that is a descendant of a [shadow-including ancestor](https://dom.spec.whatwg.org/#concept-shadow-including-ancestor) of the element hosting the attribute.
+
+Instead, most attributes return the **host** element that they're targeting, as long as the attribute's expected type is `HTMLElement`. However, The `.form` and `.list` attributes will return `null` when used with a referenceTarget, because they are expected to be `HTMLFormElement` or `HTMLDataListElement` and the host element itself is not a form or datalist. Importantly, the underlying association will still exist: the input will be connected to the form, for example; it's just not reflected by the `.form` attribute.
+
+> Note: It may be possible to add new attributes `.formElement` and `.listElement`, which could return the host element. However, that is beyond the scope of this proposal.
 
 In the example below, `input.ariaControlsElements` is the `<fancy-listbox>` element that was targeted by `aria-activedescendant="fancy-listbox"`, even though the active descendant internally targets `<div id="option-2">`.
 
@@ -323,7 +336,27 @@ In the example below, `input.ariaControlsElements` is the `<fancy-listbox>` elem
 <script>
   const input = document.getElementById("input");
   console.log(input.ariaControlsElements);
-  // [<fancy-listbox id="fancy-listbox">]
+  // Logs: [<fancy-listbox id="fancy-listbox">]
+</script>
+```
+
+This example shows a submit button connected to a form inside a shadow tree. The button's `.form` attribute returns `null`, but the button _is_ still associated with the form, and clicking it will submit the form.
+
+```html
+<button id="submit" type="submit" form="fancy-form">Submit</button>
+<fancy-form id="fancy-form">
+  <template
+    shadowrootmode="open"
+    shadowrootreferencetarget="real-form"
+  >
+    <form id="real-form"></form>
+  </template>
+</fancy-form>
+
+<script>
+  const submit = document.getElementById("submit");
+  console.log(submit.form); // Logs: null
+  submit.click(); // Submits <form id="real-form">
 </script>
 ```
 

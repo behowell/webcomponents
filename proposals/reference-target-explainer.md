@@ -183,7 +183,12 @@ this.shadowRoot_.referenceTargetMap.htmlFor = "real-input";
 
 #### Live references
 
-Reference targets are a "live reference": if the host internally changes its reference target mapping, any element that references the host will use the updated mapping.
+Reference targets are a "live reference". Any of the following changes could result in an element reference being updated:
+* The host changes its `referenceTarget` or `referenceTargetMap` to refer to a different ID.
+* An element with an `id` that matches its host's referenceTarget is added to or removed from the host's shadow tree.
+* The `id` attribute of an element inside the host's shadow tree is changed to or from the referenceTarget ID.
+* The host is added or removed from the DOM.
+* The host's `id` attribute is changed.
 
 In the example above, if the `aria-activedescendant` mapping is changed, then the `aria-activedescendant` of `<input>` will be changed to refer to the newly-mapped element.
 
